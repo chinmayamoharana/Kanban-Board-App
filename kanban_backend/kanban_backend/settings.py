@@ -66,13 +66,11 @@ def env_first(*names, default=''):
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-^=mrw%4d4_0!5taxt9x37+n4^2z+ejr5mhcp4&7y=@u0j#sdc5')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env_bool('DJANGO_DEBUG', True)
-
+DEBUG = env_bool('DJANGO_DEBUG', False)
 ALLOWED_HOSTS = env_list(
     'DJANGO_ALLOWED_HOSTS',
-    ['*'] if DEBUG else ['localhost', '127.0.0.1'],
+    ['kanban-board-app-9ip9.onrender.com']
 )
-
 
 # Application definition
 
