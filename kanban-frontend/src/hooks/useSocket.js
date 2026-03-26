@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 const getSocketBaseUrl = () => {
     if (import.meta.env.VITE_WS_URL) {
-        return import.meta.env.VITE_WS_URL.replace(/\/$/, '');
+        return import.meta.env.VITE_WS_URL.replace(/\/+$/, '');
     }
 
     if (import.meta.env.VITE_API_URL) {
@@ -13,13 +13,7 @@ const getSocketBaseUrl = () => {
             .replace(/\/api$/, '');
     }
 
-    if (typeof window === 'undefined') {
-        return 'ws://127.0.0.1:8000';
-    }
-
-    const { protocol, hostname } = window.location;
-    const socketProtocol = protocol === 'https:' ? 'wss' : 'ws';
-    return `${socketProtocol}://${hostname}:8000`;
+    return 'wss://kanban-board-app-9ip9.onrender.com';
 };
 
 export const useSocket = (boardId, onMessage) => {
