@@ -27,7 +27,6 @@ daphne -b 0.0.0.0 -p $PORT kanban_backend.asgi:application
 
 Set these environment variables:
 
-- `VITE_API_URL=<backend-api-url>/api/`
 - `VITE_WS_URL=<backend-ws-url>` if your WebSocket endpoint is on a different host
 
 Build:
@@ -36,4 +35,4 @@ Build:
 npm run build
 ```
 
-Serve the generated `dist/` folder with your static host or CDN.
+If you deploy with Vercel, the frontend build will pick up [`kanban-frontend/.env.production`](/c:/Users/mohar/OneDrive/Desktop/django-rest-framework-react/Kanban%20Board%20App/kanban-frontend/.env.production) and call the Render backend directly. The repo-root [`vercel.json`](/c:/Users/mohar/OneDrive/Desktop/django-rest-framework-react/Kanban%20Board%20App/vercel.json) still exists as a fallback build/proxy path for monorepo deployments.
