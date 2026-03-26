@@ -6,15 +6,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 User = get_user_model()
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, min_length=6)
 
     class Meta:
         model = User
         fields = ('username', 'email', 'password')
-        extra_kwargs = {
-            'username': {'validators': []},
-            'email': {'validators': []},
-        }
 
     def validate(self, attrs):
         errors = {}
@@ -48,6 +44,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return user
 
     def to_representation(self, instance):
+        """
+        Return user info + JWT tokens immediately after registration
+        """
         refresh = RefreshToken.for_user(instance)
         return {
             'id': instance.id,
