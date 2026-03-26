@@ -10,6 +10,10 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('username', 'email', 'password')
+        extra_kwargs = {
+            'username': {'validators': []},
+            'email': {'validators': []},
+        }
 
     def validate(self, attrs):
         errors = {}
@@ -21,7 +25,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             errors['username'] = ['This username is already taken.']
 
         if User.objects.filter(email__iexact=email).exists():
-            errors['email'] = ['This email is already registered.']
+            errors['email'] = ['An account with this email already exists.']
 
         if errors:
             raise serializers.ValidationError(errors)

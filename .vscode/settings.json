@@ -1,0 +1,6 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/kanban_backend/env/Scripts/python.exe",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/kanban_backend"
+  ]
+}

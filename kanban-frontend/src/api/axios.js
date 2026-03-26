@@ -6,7 +6,11 @@ const getApiBaseUrl = () => {
         return `${configuredUrl.replace(/\/+$/, '')}/`;
     }
 
-    return 'https://kanban-board-app-9ip9.onrender.com/api/';
+    if (import.meta.env.DEV) {
+        return 'http://127.0.0.1:8000/api/';
+    }
+
+    return '/api/';
 };
 
 const API_URL = getApiBaseUrl();

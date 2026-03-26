@@ -13,6 +13,10 @@ const getSocketBaseUrl = () => {
             .replace(/\/api$/, '');
     }
 
+    if (import.meta.env.DEV) {
+        return 'ws://127.0.0.1:8000';
+    }
+
     return 'wss://kanban-board-app-9ip9.onrender.com';
 };
 

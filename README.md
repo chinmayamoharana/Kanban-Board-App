@@ -163,13 +163,15 @@ The backend reads these values from [`kanban_backend/.env`](c:\Users\mohar\OneDr
 
 ### Frontend
 
+For local development, the frontend can talk to the Django backend directly. For deployment, the frontend is set up to proxy HTTP API requests through Vercel at `/api/*` and connect WebSockets directly to the backend host.
+
 You can optionally set a WebSocket base URL for custom deployments:
 
 ```env
 VITE_WS_URL=ws://127.0.0.1:8000
 ```
 
-If it is not set, the app derives the WebSocket host from the current browser hostname.
+If it is not set, the app derives the WebSocket host from `VITE_API_URL` when available, otherwise it falls back to the Render backend host.
 
 ## Deployment
 
@@ -179,6 +181,7 @@ This project is ready for a simple single-instance deploy.
 - The in-memory Channels layer means WebSockets are limited to one app process.
 - Make sure the deploy target keeps `kanban_backend/db.sqlite3` on persistent storage if you want data to survive restarts.
 - The included [`Procfile`](/c:/Users/mohar/OneDrive/Desktop/django-rest-framework-react/Kanban%20Board%20App/Procfile) starts the ASGI app with Daphne.
+- The frontend `vercel.json` proxies `/api/*` to the backend, so deploys can work even when `VITE_API_URL` is not set.
 
 ## API Overview
 
