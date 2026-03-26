@@ -38,3 +38,22 @@ class UserRegistrationSerializerTests(TestCase):
         )
 
         self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_registration_representation_includes_jwt_tokens(self):
+        serializer = UserRegistrationSerializer(
+            data={
+                'username': 'tokentest',
+                'email': 'tokentest@example.com',
+                'password': 'StrongPass123!',
+            }
+        )
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        user = serializer.save()
+        payload = serializer.data
+
+        self.assertEqual(payload['id'], user.id)
+        self.assertEqual(payload['username'], 'tokentest')
+        self.assertEqual(payload['email'], 'tokentest@example.com')
+        self.assertIn('access', payload)
+        self.assertIn('refresh', payload)

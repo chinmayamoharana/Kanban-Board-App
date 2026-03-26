@@ -5,11 +5,16 @@ const getApiBaseUrl = () => {
 
   // ✅ Production (Vercel → Render)
   if (configuredUrl) {
-    return `${configuredUrl.replace(/\/+$/, "")}/api/`;
+    return `${configuredUrl.replace(/\/+$/, "")}/`;
   }
 
   // ✅ Local development
-  return "http://127.0.0.1:8000/api/";
+  if (import.meta.env.DEV) {
+    return "http://127.0.0.1:8000/api/";
+  }
+
+  // ✅ Production fallback if env vars are missing
+  return "https://kanban-board-app-9ip9.onrender.com/api/";
 };
 
 const API_URL = getApiBaseUrl();

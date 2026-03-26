@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
+from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 
@@ -45,6 +46,16 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             password=validated_data['password']
         )
         return user
+
+    def to_representation(self, instance):
+        refresh = RefreshToken.for_user(instance)
+        return {
+            'id': instance.id,
+            'username': instance.username,
+            'email': instance.email,
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+        }
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
