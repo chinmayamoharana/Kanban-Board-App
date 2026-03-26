@@ -1,0 +1,12 @@
+kanban_backend/.env
+kanban_backend/db.sqlite3
+kanban_backend/media/
+kanban_backend/staticfiles/
+kanban_backend/env/
+kanban-frontend/node_modules/
+kanban-frontend/dist/
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
