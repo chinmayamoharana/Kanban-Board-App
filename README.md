@@ -163,15 +163,8 @@ The backend reads these values from [`kanban_backend/.env`](c:\Users\mohar\OneDr
 
 ### Frontend
 
-For local development, the frontend can talk to the Django backend directly. For deployment, the frontend now bakes the Render backend URL into the production build via [`kanban-frontend/.env.production`](/c:/Users/mohar/OneDrive/Desktop/django-rest-framework-react/Kanban%20Board%20App/kanban-frontend/.env.production), and can also proxy HTTP API requests through Vercel at `/api/*`.
-
-You can optionally set a WebSocket base URL for custom deployments:
-
-```env
-VITE_WS_URL=ws://127.0.0.1:8000
-```
-
-If it is not set, the app derives the WebSocket host from `VITE_API_URL` when available, otherwise it falls back to the Render backend host.
+For local development, the frontend talks to the Django backend at `http://127.0.0.1:8000/api/`.
+For deployment, the frontend uses the Render backend directly at `https://kanban-board-app-9ip9.onrender.com/api/` and connects WebSockets to `wss://kanban-board-app-9ip9.onrender.com`.
 
 ## Deployment
 
@@ -264,7 +257,7 @@ npm run build
 - The project allows all hosts in development mode for easier device testing.
 - CORS is enabled for development.
 - The local database lives in [`kanban_backend/db.sqlite3`](c:\Users\mohar\OneDrive\Desktop\django-rest-framework-react\Kanban%20Board%20App\kanban_backend\db.sqlite3).
-- WebSocket URLs are host-aware by default and can also be overridden with `VITE_WS_URL`.
+- WebSocket URLs are fixed to the local backend in development and the Render host in production.
 
 ## Future Improvements
 

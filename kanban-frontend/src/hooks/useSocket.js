@@ -1,18 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
 const getSocketBaseUrl = () => {
-    if (import.meta.env.VITE_WS_URL) {
-        return import.meta.env.VITE_WS_URL.replace(/\/+$/, '');
-    }
-
-    if (import.meta.env.VITE_API_URL) {
-        const apiUrl = import.meta.env.VITE_API_URL.trim().replace(/\/+$/, '');
-        return apiUrl
-            .replace(/^https:/, 'wss:')
-            .replace(/^http:/, 'ws:')
-            .replace(/\/api$/, '');
-    }
-
     if (import.meta.env.DEV) {
         return 'ws://127.0.0.1:8000';
     }

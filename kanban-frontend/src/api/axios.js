@@ -1,19 +1,10 @@
 import axios from "axios";
 
 const getApiBaseUrl = () => {
-  const configuredUrl = import.meta.env.VITE_API_URL?.trim();
-
-  // ✅ Production (Vercel → Render)
-  if (configuredUrl) {
-    return `${configuredUrl.replace(/\/+$/, "")}/`;
-  }
-
-  // ✅ Local development
   if (import.meta.env.DEV) {
     return "http://127.0.0.1:8000/api/";
   }
 
-  // ✅ Production fallback if env vars are missing
   return "https://kanban-board-app-9ip9.onrender.com/api/";
 };
 
