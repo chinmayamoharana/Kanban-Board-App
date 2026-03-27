@@ -160,11 +160,19 @@ DJANGO_DEBUG=True
 ```
 
 The backend reads these values from [`kanban_backend/.env`](c:\Users\mohar\OneDrive\Desktop\django-rest-framework-react\Kanban%20Board%20App\kanban_backend\.env) automatically.
+The backend always uses the local SQLite file at [`kanban_backend/db.sqlite3`](c:\Users\mohar\OneDrive\Desktop\django-rest-framework-react\Kanban%20Board%20App\kanban_backend\db.sqlite3).
 
 ### Frontend
 
 For local development, the frontend talks to the Django backend at `http://127.0.0.1:8000/api/`.
-For deployment, the frontend uses the Render backend directly at `https://kanban-board-app-9ip9.onrender.com/api/` and connects WebSockets to `wss://kanban-board-app-9ip9.onrender.com`.
+For deployment, set:
+
+```env
+VITE_API_BASE_URL=/api/
+VITE_WS_BASE_URL=wss://your-backend-host
+```
+
+You can also point `VITE_API_BASE_URL` directly at your backend API URL if you prefer.
 
 ## Deployment
 
@@ -257,7 +265,7 @@ npm run build
 - The project allows all hosts in development mode for easier device testing.
 - CORS is enabled for development.
 - The local database lives in [`kanban_backend/db.sqlite3`](c:\Users\mohar\OneDrive\Desktop\django-rest-framework-react\Kanban%20Board%20App\kanban_backend\db.sqlite3).
-- WebSocket URLs are fixed to the local backend in development and the Render host in production.
+- WebSocket URLs can be configured with `VITE_WS_BASE_URL`.
 
 ## Future Improvements
 

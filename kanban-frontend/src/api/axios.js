@@ -1,11 +1,19 @@
 import axios from "axios";
 
+const withTrailingSlash = (value) => (value.endsWith("/") ? value : `${value}/`);
+
 const getApiBaseUrl = () => {
+  const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+
+  if (configuredBaseUrl) {
+    return withTrailingSlash(configuredBaseUrl);
+  }
+
   if (import.meta.env.DEV) {
     return "http://127.0.0.1:8000/api/";
   }
 
-  return "https://kanban-board-app-9ip9.onrender.com/api/";
+  return "/api/";
 };
 
 const API_URL = getApiBaseUrl();

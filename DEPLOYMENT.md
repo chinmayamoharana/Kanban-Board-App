@@ -6,7 +6,7 @@ Set these environment variables:
 
 - `DJANGO_DEBUG=False`
 - `DJANGO_SECRET_KEY=<strong-secret>`
-- `DJANGO_ALLOWED_HOSTS=<your-backend-host>`
+- `DJANGO_ALLOWED_HOSTS=<your-backend-host>,<your-frontend-host>`
 - `DJANGO_CORS_ALLOWED_ORIGINS=<your-frontend-origin>`
 - `DJANGO_CSRF_TRUSTED_ORIGINS=<your-frontend-origin>`
 
@@ -31,5 +31,7 @@ Build:
 npm run build
 ```
 
-The frontend now uses direct URLs in code, so no frontend `.env` file is required.
-In production it calls the Render backend directly and connects WebSockets to the Render host.
+Recommended Vercel environment variables:
+
+- `VITE_API_BASE_URL=https://kanban-board-app-9ip9.onrender.com/api/`
+- `VITE_WS_BASE_URL=wss://<your-backend-host>`

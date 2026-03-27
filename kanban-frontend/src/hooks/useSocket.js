@@ -1,11 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
 
+const trimTrailingSlash = (value) => value.replace(/\/+$/, '');
+
 const getSocketBaseUrl = () => {
+    const configuredBaseUrl = import.meta.env.VITE_WS_BASE_URL?.trim();
+    if (configuredBaseUrl) {
+        return trimTrailingSlash(configuredBaseUrl);
+    }
+
+    const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+    if (configuredApiBaseUrl && /^https?:\/\//i.test(configuredApiBaseUrl)) {
+        const normalizedApiUrl = trimTrailingSlash(configuredApiBaseUrl).replace(/\/api$/i, '');
+        return normalizedApiUrl.replace(/^http/i, 'ws');
+    }
+
     if (import.meta.env.DEV) {
         return 'ws://127.0.0.1:8000';
     }
 
-    return 'wss://kanban-board-app-9ip9.onrender.com';
+    return window.location.origin.replace(/^http/i, 'ws');
 };
 
 export const useSocket = (boardId, onMessage) => {

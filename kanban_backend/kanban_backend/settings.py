@@ -54,14 +54,6 @@ def env_list(name, default=None):
     return [item.strip() for item in value.split(',') if item.strip()]
 
 
-def env_first(*names, default=''):
-    for name in names:
-        value = os.getenv(name)
-        if value is not None and value != '':
-            return value
-    return default
-
-
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-^=mrw%4d4_0!5taxt9x37+n4^2z+ejr5mhcp4&7y=@u0j#sdc5')
 
@@ -69,7 +61,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-^=mrw%4d4_0!5taxt9x
 DEBUG = env_bool('DJANGO_DEBUG', False)
 ALLOWED_HOSTS = env_list(
     'DJANGO_ALLOWED_HOSTS',
-    ['kanban-board-app-9ip9.onrender.com']
+    ['127.0.0.1', 'localhost', '.onrender.com', '.vercel.app']
 )
 
 # Application definition
