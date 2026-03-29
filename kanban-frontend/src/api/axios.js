@@ -1,22 +1,6 @@
 import axios from "axios";
 
-const withTrailingSlash = (value) => (value.endsWith("/") ? value : `${value}/`);
-
-const getApiBaseUrl = () => {
-  const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
-
-  if (configuredBaseUrl) {
-    return withTrailingSlash(configuredBaseUrl);
-  }
-
-  if (import.meta.env.DEV) {
-    return "http://127.0.0.1:8000/api/";
-  }
-
-  return "/api/";
-};
-
-const API_URL = getApiBaseUrl();
+const API_URL = "http://127.0.0.1:8000/api/";
 
 const api = axios.create({
   baseURL: API_URL,

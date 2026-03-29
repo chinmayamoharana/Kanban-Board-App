@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
-from importlib.util import find_spec
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -58,11 +57,8 @@ def env_list(name, default=None):
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-^=mrw%4d4_0!5taxt9x37+n4^2z+ejr5mhcp4&7y=@u0j#sdc5')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env_bool('DJANGO_DEBUG', False)
-ALLOWED_HOSTS = env_list(
-    'DJANGO_ALLOWED_HOSTS',
-    ['127.0.0.1', 'localhost', '.onrender.com', '.vercel.app']
-)
+DEBUG = env_bool('DJANGO_DEBUG', True)
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 # Application definition
 
@@ -84,8 +80,6 @@ INSTALLED_APPS = [
     'apps.core',
 ]
 
-HAS_WHITENOISE = find_spec('whitenoise') is not None
-
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -96,9 +90,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-if HAS_WHITENOISE:
-    MIDDLEWARE.insert(2, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 ROOT_URLCONF = 'kanban_backend.urls'
 
@@ -170,19 +161,6 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-if not DEBUG:
-    if HAS_WHITENOISE:
-        STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = int(os.getenv('DJANGO_SECURE_HSTS_SECONDS', '31536000'))
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_REFERRER_POLICY = 'same-origin'
-    USE_X_FORWARDED_HOST = True
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -219,8 +197,9 @@ CHANNEL_LAYERS = {
 }
 
 # CORS Config
-CORS_ALLOWED_ORIGINS = env_list('DJANGO_CORS_ALLOWED_ORIGINS')
-# Allow deployment to work even before explicit origins are configured.
-CORS_ALLOW_ALL_ORIGINS = DEBUG or not CORS_ALLOWED_ORIGINS
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+]
 CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = env_list('DJANGO_CSRF_TRUSTED_ORIGINS', CORS_ALLOWED_ORIGINS)
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
