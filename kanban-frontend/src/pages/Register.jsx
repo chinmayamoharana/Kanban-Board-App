@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowRight, Eye, EyeOff, ShieldCheck, Sparkles, UserPlus } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, Loader2, ShieldCheck, Sparkles, UserPlus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 const Register = () => {
     const [formData, setFormData] = useState({ username: '', email: '', password: '' });
     const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
     const { register } = useAuth();
+    const toast = useToast();
 
     const formatRegisterError = (responseData) => {
         if (!responseData) {
@@ -33,10 +36,19 @@ const Register = () => {
         e.preventDefault();
         try {
             setError('');
+            setIsSubmitting(true);
             await register(formData);
-            navigate('/');
+            toast.success('Account created successfully.');
+            await new Promise((resolve) => setTimeout(resolve, 800));
+            navigate('/login', {
+                replace: true,
+                state: { message: 'Registration successful. Please sign in to continue.' },
+            });
         } catch (err) {
-            setError(formatRegisterError(err.response?.data));
+            const message = formatRegisterError(err.response?.data);
+            setError(message);
+            toast.error(message);
+            setIsSubmitting(false);
         }
     };
 
@@ -87,6 +99,16 @@ const Register = () => {
                     <div className="glass-panel surface-card relative w-full overflow-hidden rounded-[32px] p-6 shadow-2xl shadow-slate-950/30 sm:p-8 lg:p-10">
                         <div className="hero-orb hero-orb--teal left-[-3rem] top-[-3rem] h-36 w-36" />
                         <div className="hero-orb hero-orb--pink right-[-2rem] bottom-[-3rem] h-48 w-48" />
+                        {isSubmitting && (
+                            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[32px] bg-slate-950/65 backdrop-blur-sm">
+                                <div className="flex flex-col items-center gap-3 rounded-3xl border border-white/10 bg-white/5 px-6 py-5 text-center text-white shadow-2xl shadow-slate-950/30">
+                                    <Loader2 className="animate-spin text-fuchsia-300" size={24} />
+                                    <p className="text-sm font-semibold">
+                                        {error ? 'Please try again.' : 'Creating account and redirecting to login...'}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="relative mb-8">
                             <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-fuchsia-100">
@@ -110,6 +132,7 @@ const Register = () => {
                             <input
                                 type="text"
                                 required
+                                disabled={isSubmitting}
                                 className="form-input rounded-2xl px-4 py-3 text-sm sm:text-base"
                                 placeholder="Username"
                                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
@@ -117,6 +140,7 @@ const Register = () => {
                             <input
                                 type="email"
                                 required
+                                disabled={isSubmitting}
                                 className="form-input rounded-2xl px-4 py-3 text-sm sm:text-base"
                                 placeholder="Email"
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -126,6 +150,7 @@ const Register = () => {
                                     type={showPassword ? 'text' : 'password'}
                                     required
                                     minLength={6}
+                                    disabled={isSubmitting}
                                     className="form-input w-full rounded-2xl px-4 py-3 pr-12 text-sm sm:text-base"
                                     placeholder="Password"
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -135,6 +160,7 @@ const Register = () => {
                                     onClick={() => setShowPassword((current) => !current)}
                                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                                     aria-pressed={showPassword}
+                                    disabled={isSubmitting}
                                     className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 text-slate-400 transition hover:bg-white/5 hover:text-white"
                                 >
                                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -143,11 +169,21 @@ const Register = () => {
                             <p className="text-xs text-slate-400">Password must be at least 6 characters long.</p>
                             <button
                                 type="submit"
-                                className="group rounded-2xl bg-fuchsia-500 px-4 py-3 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-fuchsia-400"
+                                disabled={isSubmitting}
+                                className="group rounded-2xl bg-fuchsia-500 px-4 py-3 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-fuchsia-400 disabled:cursor-not-allowed disabled:opacity-80 disabled:hover:translate-y-0"
                             >
                                 <span className="flex items-center justify-center gap-2">
-                                    Register
-                                    <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
+                                    {isSubmitting ? (
+                                        <>
+                                            <Loader2 size={16} className="animate-spin" />
+                                            Redirecting
+                                        </>
+                                    ) : (
+                                        <>
+                                            Register
+                                            <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
+                                        </>
+                                    )}
                                 </span>
                             </button>
                         </form>

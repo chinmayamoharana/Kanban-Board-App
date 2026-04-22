@@ -2,10 +2,11 @@ import React, { useCallback, useDeferredValue, useEffect, useMemo, useState } fr
 import { useNavigate, useParams } from 'react-router-dom';
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import { motion } from 'framer-motion';
-import { Crown, Pencil, Plus, Radio, UserPlus, Users, WifiOff } from 'lucide-react';
+import { Crown, Loader2, Pencil, Plus, Radio, UserPlus, Users, WifiOff } from 'lucide-react';
 
 import { boardApi } from '../../api/boardApi';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { useSocket } from '../../hooks/useSocket';
 import ListColumn from './ListColumn';
 import TaskDetailsModal from './TaskDetailsModal';
@@ -43,10 +44,12 @@ const BoardPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
+    const toast = useToast();
     const [board, setBoard] = useState(null);
     const [error, setError] = useState('');
     const [inviteValue, setInviteValue] = useState('');
     const [inviteRole, setInviteRole] = useState('member');
+    const [isInviting, setIsInviting] = useState(false);
     const [activeTask, setActiveTask] = useState(null);
     const [taskSearch, setTaskSearch] = useState('');
     const [taskFilter, setTaskFilter] = useState('all');
@@ -519,21 +522,33 @@ const BoardPage = () => {
 
     const handleInviteMember = useCallback(async (event) => {
         event.preventDefault();
-        if (!inviteValue.trim()) return;
+        if (!inviteValue.trim()) {
+            const message = 'Please enter a username or email to invite.';
+            setError(message);
+            toast.error(message);
+            return;
+        }
 
         try {
+            const target = inviteValue.trim();
+            setIsInviting(true);
             const response = await boardApi.inviteMember(id, {
-                identifier: inviteValue.trim(),
+                identifier: target,
                 role: inviteRole,
             });
             upsertMember(response.data);
             setInviteValue('');
             setInviteRole('member');
             setError('');
+            toast.success(`Invite sent to ${target} as ${inviteRole}.`);
         } catch (err) {
-            setError(getApiErrorMessage(err, 'Unable to invite that user.'));
+            const message = getApiErrorMessage(err, 'Unable to invite that user.');
+            setError(message);
+            toast.error(message);
+        } finally {
+            setIsInviting(false);
         }
-    }, [id, inviteRole, inviteValue, upsertMember]);
+    }, [id, inviteRole, inviteValue, toast, upsertMember]);
 
     const handleChangeMemberRole = useCallback(async (memberId, role) => {
         try {
@@ -746,9 +761,19 @@ const BoardPage = () => {
                                 </select>
                                 <button
                                     type="submit"
-                                    className="rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+                                    disabled={isInviting}
+                                    className="rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-80 disabled:hover:bg-cyan-400"
                                 >
-                                    Send invite
+                                    <span className="flex items-center justify-center gap-2">
+                                        {isInviting ? (
+                                            <>
+                                                <Loader2 size={16} className="animate-spin" />
+                                                Sending...
+                                            </>
+                                        ) : (
+                                            'Send invite'
+                                        )}
+                                    </span>
                                 </button>
                             </form>
                         ) : (

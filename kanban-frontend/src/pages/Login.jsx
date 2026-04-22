@@ -1,24 +1,35 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
-import { ArrowRight, Eye, EyeOff, Sparkles, ShieldCheck, LayoutGrid } from 'lucide-react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { ArrowRight, Eye, EyeOff, Loader2, Sparkles, ShieldCheck, LayoutGrid } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 const Login = () => {
     const [credentials, setCredentials] = useState({ username: '', password: '' });
     const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+    const successMessage = location.state?.message || '';
+    const toast = useToast();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             setError('');
+            setIsSubmitting(true);
             await login(credentials);
-            navigate('/');
+            toast.success('Signed in successfully.');
+            await new Promise((resolve) => setTimeout(resolve, 800));
+            navigate('/', { replace: true });
         } catch (err) {
-            setError(err.response?.data?.detail || 'Login failed. Please check your username and password.');
+            const message = err.response?.data?.detail || 'Login failed. Please check your username and password.';
+            setError(message);
+            toast.error(message);
+            setIsSubmitting(false);
         }
     };
 
@@ -81,6 +92,15 @@ const Login = () => {
                         </div>
 
                         <form className="grid gap-4" onSubmit={handleSubmit}>
+                            {successMessage && !error && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100"
+                                >
+                                    {successMessage}
+                                </motion.div>
+                            )}
                             {error && (
                                 <motion.div
                                     initial={{ opacity: 0, y: -8 }}
@@ -93,6 +113,7 @@ const Login = () => {
                             <input
                                 type="text"
                                 required
+                                disabled={isSubmitting}
                                 className="form-input rounded-2xl px-4 py-3 text-sm sm:text-base"
                                 placeholder="Username or email"
                                 onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
@@ -102,6 +123,7 @@ const Login = () => {
                                     <input
                                         type={showPassword ? 'text' : 'password'}
                                         required
+                                        disabled={isSubmitting}
                                         className="form-input w-full rounded-2xl px-4 py-3 pr-12 text-sm sm:text-base"
                                         placeholder="Password"
                                         onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
@@ -111,6 +133,7 @@ const Login = () => {
                                         onClick={() => setShowPassword((current) => !current)}
                                         aria-label={showPassword ? 'Hide password' : 'Show password'}
                                         aria-pressed={showPassword}
+                                        disabled={isSubmitting}
                                         className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 text-slate-400 transition hover:bg-white/5 hover:text-white"
                                     >
                                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -119,11 +142,21 @@ const Login = () => {
                             </div>
                             <button
                                 type="submit"
-                                className="group rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950 transition duration-300 hover:-translate-y-0.5 hover:bg-cyan-300"
+                                disabled={isSubmitting}
+                                className="group rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950 transition duration-300 hover:-translate-y-0.5 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-80 disabled:hover:translate-y-0"
                             >
                                 <span className="flex items-center justify-center gap-2">
-                                    Sign In
-                                    <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
+                                    {isSubmitting ? (
+                                        <>
+                                            <Loader2 size={16} className="animate-spin" />
+                                            Signing in
+                                        </>
+                                    ) : (
+                                        <>
+                                            Sign In
+                                            <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
+                                        </>
+                                    )}
                                 </span>
                             </button>
                         </form>

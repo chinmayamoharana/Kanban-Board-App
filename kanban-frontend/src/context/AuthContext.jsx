@@ -46,7 +46,6 @@ export const AuthProvider = ({ children }) => {
 
     const register = async (formData) => {
         const res = await authApi.register(formData);
-        applySession(res.data);
         return res.data;
     };
 

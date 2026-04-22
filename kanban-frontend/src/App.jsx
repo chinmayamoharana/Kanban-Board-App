@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 import Navbar from './components/Navbar';
 
 const Login = lazy(() => import('./pages/Login'));
@@ -74,9 +75,11 @@ function AppContent() {
 function App() {
     return (
         <AuthProvider>
-            <Router>
-                <AppContent />
-            </Router>
+            <ToastProvider>
+                <Router>
+                    <AppContent />
+                </Router>
+            </ToastProvider>
         </AuthProvider>
     );
 }

@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { boardApi } from '../api/boardApi';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Layout, Plus, Search, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Layout, Loader2, Plus, Search, Sparkles, X } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 const MotionLink = motion(Link);
 
@@ -11,6 +12,8 @@ const Dashboard = () => {
     const [newBoardName, setNewBoardName] = useState('');
     const [boardSearch, setBoardSearch] = useState('');
     const [error, setError] = useState('');
+    const [isCreatingBoard, setIsCreatingBoard] = useState(false);
+    const toast = useToast();
 
     useEffect(() => {
         fetchBoards();
@@ -22,7 +25,9 @@ const Dashboard = () => {
             setBoards(res.data);
             setError('');
         } catch (err) {
-            setError('We could not load your boards. Make sure the backend is running and you are signed in.');
+            const message = 'We could not load your boards. Make sure the backend is running and you are signed in.';
+            setError(message);
+            toast.error(message);
         }
     };
 
@@ -31,11 +36,17 @@ const Dashboard = () => {
         if (!newBoardName.trim()) return;
 
         try {
+            setIsCreatingBoard(true);
             await boardApi.createBoard({ name: newBoardName.trim() });
             setNewBoardName('');
+            toast.success('Board created successfully.');
             fetchBoards();
         } catch (err) {
-            setError('Board creation failed. Please try again.');
+            const message = 'Board creation failed. Please try again.';
+            setError(message);
+            toast.error(message);
+        } finally {
+            setIsCreatingBoard(false);
         }
     };
 
@@ -120,11 +131,21 @@ const Dashboard = () => {
                                 </div>
                                 <button
                                     type="submit"
-                                    className="rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 transition duration-300 hover:-translate-y-0.5 hover:bg-cyan-300"
+                                    disabled={isCreatingBoard}
+                                    className="rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 transition duration-300 hover:-translate-y-0.5 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-80 disabled:hover:translate-y-0"
                                 >
                                     <span className="flex items-center justify-center gap-2">
-                                        <Plus size={18} />
-                                        Create Board
+                                        {isCreatingBoard ? (
+                                            <>
+                                                <Loader2 size={18} className="animate-spin" />
+                                                Creating...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Plus size={18} />
+                                                Create Board
+                                            </>
+                                        )}
                                     </span>
                                 </button>
                             </form>
