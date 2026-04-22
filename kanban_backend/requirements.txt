@@ -1,7 +1,9 @@
-django
-djangorestframework
-djangorestframework-simplejwt
-django-cors-headers
-channels
-daphne
-mysqlclient
+Django==5.2.5
+djangorestframework==3.16.1
+djangorestframework-simplejwt==5.5.1
+django-cors-headers==4.9.0
+channels==4.3.2
+daphne==4.2.1
+mysqlclient==2.2.8
+PyJWT==2.11.0
+gunicorn==22.0.0; platform_system != "Windows"
