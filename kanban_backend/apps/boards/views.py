@@ -1,10 +1,26 @@
+from django.db.models import Prefetch, Max
 from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, parser_classes
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
-from .models import Board, BoardMember, List, Task
-from .serializers import BoardInviteSerializer, BoardMemberSerializer, BoardSerializer, ListSerializer, TaskSerializer
+from .models import Board, BoardMember, List, Task, TaskActivity, TaskAttachment, TaskChecklistItem, TaskComment
+from .serializers import (
+    BoardInviteSerializer,
+    BoardMemberSerializer,
+    BoardSerializer,
+    ListSerializer,
+    TaskActivitySerializer,
+    TaskAttachmentInputSerializer,
+    TaskAttachmentSerializer,
+    TaskChecklistInputSerializer,
+    TaskChecklistItemSerializer,
+    TaskChecklistUpdateSerializer,
+    TaskCommentInputSerializer,
+    TaskCommentSerializer,
+    TaskSerializer,
+)
 from .services import BoardService
 from apps.core.events import broadcast_board_event
 
@@ -33,7 +49,24 @@ class BoardViewSet(BoardAccessMixin, viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Board.objects.filter(members__user=self.request.user).distinct()
+        task_queryset = Task.objects.select_related('assigned_to').prefetch_related(
+            'comments__author',
+            'attachments__uploaded_by',
+            'checklist_items',
+        )
+        list_queryset = List.objects.order_by('position').prefetch_related(
+            Prefetch('tasks', queryset=task_queryset),
+        )
+        member_queryset = BoardMember.objects.select_related('user').order_by('role', 'user__username')
+        return (
+            Board.objects.filter(members__user=self.request.user)
+            .distinct()
+            .select_related('owner')
+            .prefetch_related(
+                Prefetch('lists', queryset=list_queryset),
+                Prefetch('members', queryset=member_queryset),
+            )
+        )
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -143,7 +176,7 @@ class ListViewSet(BoardAccessMixin, viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return List.objects.filter(board__members__user=self.request.user).distinct()
+        return List.objects.filter(board__members__user=self.request.user).distinct().select_related('board')
 
     def perform_create(self, serializer):
         board = serializer.validated_data['board']
@@ -200,7 +233,22 @@ class TaskViewSet(BoardAccessMixin, viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Task.objects.filter(list__board__members__user=self.request.user).distinct()
+        return (
+            Task.objects.filter(list__board__members__user=self.request.user)
+            .distinct()
+            .select_related('list', 'assigned_to', 'list__board')
+            .prefetch_related(
+                'comments__author',
+                'attachments__uploaded_by',
+                'checklist_items',
+                'activity_logs__actor',
+            )
+        )
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['include_activity_logs'] = True
+        return context
 
     def perform_create(self, serializer):
         task_list = serializer.validated_data['list']
@@ -214,6 +262,13 @@ class TaskViewSet(BoardAccessMixin, viewsets.ModelViewSet):
             due_date=serializer.validated_data.get('due_date'),
         )
         serializer.instance = task
+        BoardService.record_activity(
+            task=task,
+            actor=self.request.user,
+            action='task_created',
+            message=f"Created task '{task.title}'.",
+            metadata={'title': task.title},
+        )
         task_data = TaskSerializer(task).data
         broadcast_board_event(
             task_list.board_id,
@@ -224,6 +279,13 @@ class TaskViewSet(BoardAccessMixin, viewsets.ModelViewSet):
     def perform_update(self, serializer):
         self.require_board_member(serializer.instance.list.board)
         task = serializer.save()
+        BoardService.record_activity(
+            task=task,
+            actor=self.request.user,
+            action='task_updated',
+            message=f"Updated task '{task.title}'.",
+            metadata={'title': task.title},
+        )
         task_data = TaskSerializer(task).data
         broadcast_board_event(
             task.list.board_id,
@@ -253,6 +315,13 @@ class TaskViewSet(BoardAccessMixin, viewsets.ModelViewSet):
             old_list_id = task.list_id
             BoardService.move_task(task.id, new_list_id, new_position)
             task.refresh_from_db()
+            BoardService.record_activity(
+                task=task,
+                actor=request.user,
+                action='task_moved',
+                message=f"Moved task '{task.title}'.",
+                metadata={'from_list_id': old_list_id, 'to_list_id': int(new_list_id), 'position': int(new_position)},
+            )
             broadcast_board_event(
                 task.list.board_id,
                 'task_moved',
@@ -266,3 +335,194 @@ class TaskViewSet(BoardAccessMixin, viewsets.ModelViewSet):
             )
             return Response({'status': 'task moved'})
         return Response({'error': 'list_id and position required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get', 'post'], url_path='comments')
+    def comments(self, request, pk=None):
+        task = self.get_object()
+        self.require_board_member(task.list.board)
+
+        if request.method.lower() == 'get':
+            serializer = TaskCommentSerializer(task.comments.all(), many=True, context=self.get_serializer_context())
+            return Response(serializer.data)
+
+        serializer = TaskCommentInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        comment = TaskComment.objects.create(
+            task=task,
+            author=request.user,
+            body=serializer.validated_data['body'],
+        )
+        BoardService.record_activity(
+            task=task,
+            actor=request.user,
+            action='comment_added',
+            message=f"Commented on '{task.title}'.",
+            metadata={'comment_id': comment.id},
+        )
+        comment_data = TaskCommentSerializer(comment, context=self.get_serializer_context()).data
+        broadcast_board_event(
+            task.list.board_id,
+            'task_comment_added',
+            {'board_id': task.list.board_id, 'task_id': task.id, 'comment': comment_data},
+        )
+        return Response(comment_data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['delete'], url_path=r'comments/(?P<comment_id>[^/.]+)')
+    def delete_comment(self, request, pk=None, comment_id=None):
+        task = self.get_object()
+        self.require_board_member(task.list.board)
+        comment = TaskComment.objects.get(task=task, id=comment_id)
+        comment.delete()
+        BoardService.record_activity(
+            task=task,
+            actor=request.user,
+            action='comment_deleted',
+            message=f"Deleted a comment on '{task.title}'.",
+            metadata={'comment_id': int(comment_id)},
+        )
+        broadcast_board_event(
+            task.list.board_id,
+            'task_comment_deleted',
+            {'board_id': task.list.board_id, 'task_id': task.id, 'comment_id': int(comment_id)},
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=['get', 'post'], url_path='checklist')
+    def checklist(self, request, pk=None):
+        task = self.get_object()
+        self.require_board_member(task.list.board)
+
+        if request.method.lower() == 'get':
+            serializer = TaskChecklistItemSerializer(task.checklist_items.all(), many=True, context=self.get_serializer_context())
+            return Response(serializer.data)
+
+        serializer = TaskChecklistInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        next_position = task.checklist_items.aggregate(max_position=Max('position'))['max_position']
+        item = TaskChecklistItem.objects.create(
+            task=task,
+            title=serializer.validated_data['title'],
+            position=0 if next_position is None else next_position + 1,
+        )
+        BoardService.record_activity(
+            task=task,
+            actor=request.user,
+            action='checklist_item_added',
+            message=f"Added checklist item on '{task.title}'.",
+            metadata={'checklist_item_id': item.id},
+        )
+        item_data = TaskChecklistItemSerializer(item, context=self.get_serializer_context()).data
+        broadcast_board_event(
+            task.list.board_id,
+            'task_checklist_item_added',
+            {'board_id': task.list.board_id, 'task_id': task.id, 'item': item_data},
+        )
+        return Response(item_data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['patch', 'delete'], url_path=r'checklist/(?P<item_id>[^/.]+)')
+    def checklist_item(self, request, pk=None, item_id=None):
+        task = self.get_object()
+        self.require_board_member(task.list.board)
+        item = TaskChecklistItem.objects.get(task=task, id=item_id)
+
+        if request.method.lower() == 'delete':
+            item.delete()
+            BoardService.record_activity(
+                task=task,
+                actor=request.user,
+                action='checklist_item_deleted',
+                message=f"Removed a checklist item from '{task.title}'.",
+                metadata={'checklist_item_id': int(item_id)},
+            )
+            broadcast_board_event(
+                task.list.board_id,
+                'task_checklist_item_deleted',
+                {'board_id': task.list.board_id, 'task_id': task.id, 'item_id': int(item_id)},
+            )
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        serializer = TaskChecklistUpdateSerializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        updated_fields = []
+        if 'title' in serializer.validated_data:
+            item.title = serializer.validated_data['title']
+            updated_fields.append('title')
+        if 'is_done' in serializer.validated_data:
+            item.is_done = serializer.validated_data['is_done']
+            updated_fields.append('is_done')
+        item.save(update_fields=updated_fields or None)
+        BoardService.record_activity(
+            task=task,
+            actor=request.user,
+            action='checklist_item_updated',
+            message=f"Updated checklist item on '{task.title}'.",
+            metadata={'checklist_item_id': item.id, 'is_done': item.is_done},
+        )
+        item_data = TaskChecklistItemSerializer(item, context=self.get_serializer_context()).data
+        broadcast_board_event(
+            task.list.board_id,
+            'task_checklist_item_updated',
+            {'board_id': task.list.board_id, 'task_id': task.id, 'item': item_data},
+        )
+        return Response(item_data)
+
+    @action(detail=True, methods=['get', 'post'], url_path='attachments')
+    @parser_classes([MultiPartParser, FormParser])
+    def attachments(self, request, pk=None):
+        task = self.get_object()
+        self.require_board_member(task.list.board)
+
+        if request.method.lower() == 'get':
+            serializer = TaskAttachmentSerializer(task.attachments.all(), many=True, context=self.get_serializer_context())
+            return Response(serializer.data)
+
+        serializer = TaskAttachmentInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        uploaded_file = serializer.validated_data['file']
+        attachment = TaskAttachment.objects.create(
+            task=task,
+            uploaded_by=request.user,
+            file=uploaded_file,
+            original_name=uploaded_file.name,
+        )
+        BoardService.record_activity(
+            task=task,
+            actor=request.user,
+            action='attachment_added',
+            message=f"Attached file to '{task.title}'.",
+            metadata={'attachment_id': attachment.id, 'file_name': attachment.original_name},
+        )
+        attachment_data = TaskAttachmentSerializer(attachment, context=self.get_serializer_context()).data
+        broadcast_board_event(
+            task.list.board_id,
+            'task_attachment_added',
+            {'board_id': task.list.board_id, 'task_id': task.id, 'attachment': attachment_data},
+        )
+        return Response(attachment_data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['delete'], url_path=r'attachments/(?P<attachment_id>[^/.]+)')
+    def delete_attachment(self, request, pk=None, attachment_id=None):
+        task = self.get_object()
+        self.require_board_member(task.list.board)
+        attachment = TaskAttachment.objects.get(task=task, id=attachment_id)
+        attachment.delete()
+        BoardService.record_activity(
+            task=task,
+            actor=request.user,
+            action='attachment_deleted',
+            message=f"Removed an attachment from '{task.title}'.",
+            metadata={'attachment_id': int(attachment_id)},
+        )
+        broadcast_board_event(
+            task.list.board_id,
+            'task_attachment_deleted',
+            {'board_id': task.list.board_id, 'task_id': task.id, 'attachment_id': int(attachment_id)},
+        )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=['get'], url_path='activity')
+    def activity(self, request, pk=None):
+        task = self.get_object()
+        self.require_board_member(task.list.board)
+        serializer = TaskActivitySerializer(task.activity_logs.all(), many=True, context=self.get_serializer_context())
+        return Response(serializer.data)

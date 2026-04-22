@@ -3,12 +3,22 @@ from django.db import transaction
 from django.db.models import Max
 from rest_framework.exceptions import ValidationError
 
-from .models import Board, BoardMember, List, Task
+from .models import Board, BoardMember, List, Task, TaskActivity
 
 
 User = get_user_model()
 
 class BoardService:
+    @staticmethod
+    def record_activity(task, actor, action, message, metadata=None):
+        return TaskActivity.objects.create(
+            task=task,
+            actor=actor,
+            action=action,
+            message=message,
+            metadata=metadata or {},
+        )
+
     @staticmethod
     @transaction.atomic
     def create_list(board, title):

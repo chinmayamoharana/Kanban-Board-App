@@ -53,12 +53,23 @@ def env_list(name, default=None):
     return [item.strip() for item in value.split(',') if item.strip()]
 
 
+def env_int(name, default):
+    value = os.getenv(name)
+    if value is None or value.strip() == '':
+        return default
+    try:
+        return int(value)
+    except ValueError:
+        return default
+
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-^=mrw%4d4_0!5taxt9x37+n4^2z+ejr5mhcp4&7y=@u0j#sdc5')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env_bool('DJANGO_DEBUG', True)
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+DEFAULT_ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = list(dict.fromkeys(DEFAULT_ALLOWED_HOSTS + env_list('DJANGO_ALLOWED_HOSTS')))
 
 # Application definition
 
@@ -116,8 +127,15 @@ WSGI_APPLICATION = 'kanban_backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': os.getenv('DJANGO_DB_ENGINE', 'django.db.backends.mysql'),
+        'NAME': os.getenv('DJANGO_DB_NAME', 'kanban_board_app'),
+        'USER': os.getenv('DJANGO_DB_USER', 'root'),
+        'PASSWORD': os.getenv('DJANGO_DB_PASSWORD', ''),
+        'HOST': os.getenv('DJANGO_DB_HOST', '127.0.0.1'),
+        'PORT': env_int('DJANGO_DB_PORT', 3306),
+        'OPTIONS': {
+            'charset': os.getenv('DJANGO_DB_CHARSET', 'utf8mb4'),
+        },
     }
 }
 
@@ -197,9 +215,14 @@ CHANNEL_LAYERS = {
 }
 
 # CORS Config
-CORS_ALLOWED_ORIGINS = [
+DEFAULT_CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
 ]
+CORS_ALLOWED_ORIGINS = list(dict.fromkeys(
+    DEFAULT_CORS_ALLOWED_ORIGINS + env_list('DJANGO_CORS_ALLOWED_ORIGINS')
+))
 CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
+CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(
+    DEFAULT_CORS_ALLOWED_ORIGINS + env_list('DJANGO_CSRF_TRUSTED_ORIGINS')
+))

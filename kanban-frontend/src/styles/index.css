@@ -134,6 +134,15 @@ body::after {
   border-radius: 999px;
 }
 
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 .surface-card {
   transition:
     transform 220ms ease,

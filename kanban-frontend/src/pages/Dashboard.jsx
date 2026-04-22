@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { boardApi } from '../api/boardApi';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Layout, Plus, Sparkles } from 'lucide-react';
+import { ArrowRight, Layout, Plus, Search, Sparkles, X } from 'lucide-react';
 
 const MotionLink = motion(Link);
 
 const Dashboard = () => {
     const [boards, setBoards] = useState([]);
     const [newBoardName, setNewBoardName] = useState('');
+    const [boardSearch, setBoardSearch] = useState('');
     const [error, setError] = useState('');
 
     useEffect(() => {
@@ -37,6 +38,19 @@ const Dashboard = () => {
             setError('Board creation failed. Please try again.');
         }
     };
+
+    const filteredBoards = useMemo(() => {
+        const query = boardSearch.trim().toLowerCase();
+        if (!query) return boards;
+        return boards.filter((board) => {
+            const searchableParts = [
+                board.name,
+                board.owner_detail?.username,
+                board.owner_detail?.email,
+            ];
+            return searchableParts.some((part) => (part || '').toLowerCase().includes(query));
+        });
+    }, [boards, boardSearch]);
 
     return (
         <div className="page-shell min-h-screen px-4 py-4 text-white sm:px-6 sm:py-6 lg:px-8 lg:py-8">
@@ -68,35 +82,58 @@ const Dashboard = () => {
                             )}
                         </div>
 
-                        <form
-                            onSubmit={handleCreateBoard}
-                            className="aurora-ring glass-panel flex w-full max-w-xl animate-rise-in flex-col gap-4 rounded-[28px] p-4 sm:flex-row sm:items-center sm:p-5"
-                        >
-                            <div className="flex flex-1 items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3">
-                                <Layout className="text-cyan-300" size={18} />
+                        <div className="grid w-full max-w-xl gap-3">
+                            <div className="glass-panel flex items-center gap-3 rounded-[28px] border border-white/10 bg-slate-950/40 px-4 py-3">
+                                <Search className="text-cyan-300" size={18} />
                                 <input
                                     type="text"
-                                    placeholder="Name your next board"
-                                    value={newBoardName}
-                                    onChange={(e) => setNewBoardName(e.target.value)}
+                                    placeholder="Search boards"
+                                    value={boardSearch}
+                                    onChange={(e) => setBoardSearch(e.target.value)}
                                     className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
                                 />
+                                {boardSearch && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setBoardSearch('')}
+                                        className="rounded-full border border-white/10 bg-white/5 p-1.5 text-slate-300 transition hover:bg-white/10"
+                                        aria-label="Clear board search"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                )}
                             </div>
-                            <button
-                                type="submit"
-                                className="rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 transition duration-300 hover:-translate-y-0.5 hover:bg-cyan-300"
+
+                            <form
+                                onSubmit={handleCreateBoard}
+                                className="aurora-ring glass-panel flex flex-col gap-4 rounded-[28px] p-4 sm:flex-row sm:items-center sm:p-5"
                             >
-                                <span className="flex items-center justify-center gap-2">
-                                    <Plus size={18} />
-                                    Create Board
-                                </span>
-                            </button>
-                        </form>
+                                <div className="flex flex-1 items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3">
+                                    <Layout className="text-cyan-300" size={18} />
+                                    <input
+                                        type="text"
+                                        placeholder="Name your next board"
+                                        value={newBoardName}
+                                        onChange={(e) => setNewBoardName(e.target.value)}
+                                        className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
+                                    />
+                                </div>
+                                <button
+                                    type="submit"
+                                    className="rounded-2xl bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 transition duration-300 hover:-translate-y-0.5 hover:bg-cyan-300"
+                                >
+                                    <span className="flex items-center justify-center gap-2">
+                                        <Plus size={18} />
+                                        Create Board
+                                    </span>
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </section>
 
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                    {boards.map((board, index) => (
+                    {filteredBoards.map((board, index) => (
                         <MotionLink
                             key={board.id}
                             to={`/board/${board.id}`}
@@ -125,7 +162,7 @@ const Dashboard = () => {
                         </MotionLink>
                     ))}
 
-                    {!boards.length && (
+                    {!filteredBoards.length && (
                         <motion.div
                             initial={{ opacity: 0, y: 16 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -134,9 +171,13 @@ const Dashboard = () => {
                             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-400/10 text-cyan-300">
                                 <Layout size={30} />
                             </div>
-                            <h2 className="mt-5 text-2xl font-bold text-white">No boards yet</h2>
+                            <h2 className="mt-5 text-2xl font-bold text-white">
+                                {boardSearch.trim() ? 'No boards match your search' : 'No boards yet'}
+                            </h2>
                             <p className="mt-2 text-sm text-slate-300">
-                                Start with your first board and turn ideas into a live planning workspace.
+                                {boardSearch.trim()
+                                    ? 'Try a different keyword or clear the search to see all boards.'
+                                    : 'Start with your first board and turn ideas into a live planning workspace.'}
                             </p>
                         </motion.div>
                     )}

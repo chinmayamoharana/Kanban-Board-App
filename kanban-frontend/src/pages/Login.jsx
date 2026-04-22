@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowRight, Sparkles, ShieldCheck, LayoutGrid } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, Sparkles, ShieldCheck, LayoutGrid } from 'lucide-react';
 
 const Login = () => {
     const [credentials, setCredentials] = useState({ username: '', password: '' });
     const [error, setError] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
 
@@ -96,13 +97,26 @@ const Login = () => {
                                 placeholder="Username"
                                 onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
                             />
-                            <input
-                                type="password"
-                                required
-                                className="form-input rounded-2xl px-4 py-3 text-sm sm:text-base"
-                                placeholder="Password"
-                                onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
-                            />
+                            <div className="grid gap-2">
+                                <div className="relative">
+                                    <input
+                                        type={showPassword ? 'text' : 'password'}
+                                        required
+                                        className="form-input w-full rounded-2xl px-4 py-3 pr-12 text-sm sm:text-base"
+                                        placeholder="Password"
+                                        onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword((current) => !current)}
+                                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                        aria-pressed={showPassword}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-2 text-slate-400 transition hover:bg-white/5 hover:text-white"
+                                    >
+                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
+                            </div>
                             <button
                                 type="submit"
                                 className="group rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950 transition duration-300 hover:-translate-y-0.5 hover:bg-cyan-300"

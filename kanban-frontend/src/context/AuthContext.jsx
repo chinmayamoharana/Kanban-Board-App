@@ -7,6 +7,18 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    const applySession = (data) => {
+        localStorage.setItem('token', data.access);
+        localStorage.setItem('refreshToken', data.refresh);
+        if (data.id && data.username && data.email) {
+            setUser({
+                id: data.id,
+                username: data.username,
+                email: data.email,
+            });
+        }
+    };
+
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
@@ -24,10 +36,29 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (credentials) => {
         const res = await authApi.login(credentials);
-        localStorage.setItem('token', res.data.access);
-        localStorage.setItem('refreshToken', res.data.refresh);
+        applySession({
+            access: res.data.access,
+            refresh: res.data.refresh,
+        });
         const userRes = await authApi.getMe();
         setUser(userRes.data);
+    };
+
+    const register = async (formData) => {
+        const res = await authApi.register(formData);
+        applySession(res.data);
+        return res.data;
+    };
+
+    const updateProfile = async (profileData) => {
+        await authApi.updateMe(profileData);
+        const refreshedUser = await authApi.getMe();
+        setUser(refreshedUser.data);
+        return refreshedUser.data;
+    };
+
+    const changePassword = async (passwordData) => {
+        return authApi.changePassword(passwordData);
     };
 
     const logout = () => {
@@ -37,7 +68,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, logout, setUser }}>
+        <AuthContext.Provider value={{ user, loading, login, register, updateProfile, changePassword, logout, setUser }}>
             {children}
         </AuthContext.Provider>
     );

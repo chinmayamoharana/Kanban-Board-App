@@ -3,6 +3,7 @@ from django.db import models
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)
+    avatar = models.FileField(upload_to='avatars/', blank=True, null=True)
     
     REQUIRED_FIELDS = ['email']
 
