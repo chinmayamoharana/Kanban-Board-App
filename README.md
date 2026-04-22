@@ -4,6 +4,8 @@ A full-stack Kanban board application built with Django, Django REST Framework, 
 
 This app lets users register, create boards, invite teammates, organize work into lists and cards, set due dates on tasks, and see board changes update live through WebSockets.
 
+Live deployment: https://chinmaya-kanban-board-app.vercel.app
+
 ## Assignment Status
 
 All core assignment points are implemented and working in the current build.
