@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from django.contrib.auth.password_validation import validate_password
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
@@ -34,10 +34,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         attrs['username'] = username
         attrs['email'] = email
         return attrs
-
-    def validate_password(self, value):
-        validate_password(value)
-        return value
 
     def create(self, validated_data):
         user = User.objects.create_user(
@@ -131,3 +127,18 @@ class PasswordChangeSerializer(serializers.Serializer):
         user.set_password(self.validated_data['new_password'])
         user.save(update_fields=['password'])
         return user
+
+
+class UsernameOrEmailTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Allow login with either username or email.
+    """
+
+    def validate(self, attrs):
+        identifier = attrs.get(self.username_field) or attrs.get('email')
+        if identifier and '@' in identifier:
+            user = User.objects.filter(email__iexact=identifier).first()
+            if user:
+                attrs[self.username_field] = user.get_username()
+
+        return super().validate(attrs)

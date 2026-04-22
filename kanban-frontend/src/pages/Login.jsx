@@ -77,7 +77,7 @@ const Login = () => {
                         <div className="mb-8">
                             <p className="text-xs uppercase tracking-[0.32em] text-cyan-200/70">Sign in</p>
                             <h2 className="mt-3 text-3xl font-bold text-white">Jump back into your workspace</h2>
-                            <p className="mt-3 text-sm leading-6 text-slate-300">Use your username and password to continue where you left off.</p>
+                            <p className="mt-3 text-sm leading-6 text-slate-300">Use your username or email with your password to continue where you left off.</p>
                         </div>
 
                         <form className="grid gap-4" onSubmit={handleSubmit}>
@@ -94,7 +94,7 @@ const Login = () => {
                                 type="text"
                                 required
                                 className="form-input rounded-2xl px-4 py-3 text-sm sm:text-base"
-                                placeholder="Username"
+                                placeholder="Username or email"
                                 onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
                             />
                             <div className="grid gap-2">

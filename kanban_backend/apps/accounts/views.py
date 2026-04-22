@@ -4,7 +4,12 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import PasswordChangeSerializer, UserRegistrationSerializer, UserSerializer
+from .serializers import (
+    PasswordChangeSerializer,
+    UsernameOrEmailTokenObtainPairSerializer,
+    UserRegistrationSerializer,
+    UserSerializer,
+)
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 
 User = get_user_model()
@@ -53,3 +58,7 @@ class SafeTokenRefreshSerializer(TokenRefreshSerializer):
 
 class SafeTokenRefreshView(TokenRefreshView):
     serializer_class = SafeTokenRefreshSerializer
+
+
+class LoginView(TokenObtainPairView):
+    serializer_class = UsernameOrEmailTokenObtainPairSerializer

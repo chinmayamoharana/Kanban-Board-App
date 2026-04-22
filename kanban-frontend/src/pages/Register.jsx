@@ -125,6 +125,7 @@ const Register = () => {
                                 <input
                                     type={showPassword ? 'text' : 'password'}
                                     required
+                                    minLength={6}
                                     className="form-input w-full rounded-2xl px-4 py-3 pr-12 text-sm sm:text-base"
                                     placeholder="Password"
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -139,6 +140,7 @@ const Register = () => {
                                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
                             </div>
+                            <p className="text-xs text-slate-400">Password must be at least 6 characters long.</p>
                             <button
                                 type="submit"
                                 className="group rounded-2xl bg-fuchsia-500 px-4 py-3 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-fuchsia-400"
