@@ -7,23 +7,25 @@ This app lets users register, create boards, invite teammates, organize work int
 ## Assignment Status
 
 All core assignment points are implemented and working in the current build.
+No core assignment point appears to be missing from the repository.
 
-- Authentication with register, login, token refresh, and current-user endpoints
-- Protected board dashboard with user-specific access
-- Board creation, membership management, and role-based permissions
-- List and task CRUD with drag-and-drop reordering
-- Task details with due dates, assignees, comments, checklist items, and attachments
-- Realtime updates over WebSockets for collaborative work
-- Search and filter support in the board view
-- Profile editing with avatar upload and password change
-- MySQL database integration for the backend
-- Local development setup documented for both frontend and backend
+- [x] Authentication with register, login, token refresh, and current-user endpoints
+- [x] Protected board dashboard with user-specific access
+- [x] Board creation, membership management, and role-based permissions
+- [x] List and task CRUD with drag-and-drop reordering
+- [x] Task details with due dates, assignees, comments, checklist items, and attachments
+- [x] Realtime updates over WebSockets for collaborative work
+- [x] Search and filter support in the board view
+- [x] Profile editing with avatar upload and password change
+- [x] MySQL database integration for the backend
+- [x] Local development setup documented for both frontend and backend
 
 Verification completed locally:
 
 - Django system checks pass
 - Frontend production build passes
 - MySQL connection and migrations are configured
+- WebSocket support is configured in the Django ASGI app
 
 ## Features
 
