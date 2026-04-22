@@ -268,6 +268,18 @@ From `kanban-frontend`:
 npm run build
 ```
 
+## Render Deployment
+
+If you deploy the backend on Render, the WebSocket connection only works when the service starts with the ASGI app, not the WSGI app.
+
+Use this start command on Render:
+
+```powershell
+daphne -b 0.0.0.0 -p $PORT kanban_backend.asgi:application
+```
+
+This repository also includes a `render.yaml` blueprint that uses the same command.
+
 ## Notes
 
 - Registration returns JWT tokens from the backend immediately and the frontend signs the user in after signup.
